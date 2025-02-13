@@ -75,7 +75,16 @@ const kumo_table_sort = {
                 temp = this.lines.map( item => ( {
                     base: item,
                     elements: [...item.querySelectorAll( this.line_selector )].map( sub => ( { [ sub.dataset.target ]: sub.innerText } ) ).reduce( ( acc, obj ) => {
-                        for( let key in obj ) acc[ key ] = obj[ key ];
+                        for( let key in obj ) {
+                            let temp_match;
+                            if( ! isNaN( obj[ key ] ) ) {
+                                acc[ key ] = parseInt( obj[ key ] );
+                            } else if( ( temp_match = obj[ key ].match( /(?<day>\d{2})\/(?<month>\d{2})\/(?<year>\d{4})/i ) ) ) {
+                                acc[ key ] = `${ temp_match.groups.year }-${ temp_match.groups.month }-${ temp_match.groups.day }`;
+                            } else {
+                                acc[ key ] = obj[ key ];
+                            }
+                        }
                         return acc;
                     }, {} )
                 } ) );
@@ -98,10 +107,8 @@ const kumo_table_sort = {
                         let temp = JSON.stringify( item.elements );
                         if( ! all_lines_elements.includes( temp ) ) not_in_lines.push( item );
                     } );
-                    console.log( this.object_lines );
                     if( concat ) this.object_lines = [ ...this.object_lines, ...not_in_lines ];
                     else this.object_lines = [ ...not_in_lines ];
-                    console.log( this.object_lines );
                 }
             }
         }
@@ -127,7 +134,7 @@ const kumo_table_sort = {
             if( this.head_lines.length !== 0 ) {
                 if( this.object_lines !== null ) {
                     const keys = Object.keys( this.object_lines[ 0 ].elements );
-                    this.object_head_lines = this.head_lines.map( ( item, index ) => ( {
+                    this.object_head_lines = this.head_lines.filter( item => keys.includes( item.dataset.target ) ).map( ( item, index ) => ( {
                         [ keys[ index ] ]: item.innerText,
                         base: item,
                         sort: keys[ index ]
@@ -135,7 +142,7 @@ const kumo_table_sort = {
                 } else this.object_head_lines = this.head_lines.map( item => item.innerText );
                 if( cantEmpty && this.object_lines === null ) return;
                 this.object_head_lines.forEach( item => {
-                    if( item.base.dataset.hasOwnProperty( 'noFilter' ) ) return;
+                    if( item?.base?.dataset?.hasOwnProperty( 'noFilter' ) ?? true ) return;
                     item.base.addEventListener( 'click', () => {
                         if( this.active_head_line !== null ) {
                             this.active_head_line?.base.classList.remove( 'inline-flex', 'items-center', 'gap-2' );
